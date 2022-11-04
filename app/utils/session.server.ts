@@ -95,3 +95,9 @@ export const logout = async (request: Request) => {
     headers: { "Set-Cookie": await storage.destroySession(session) },
   });
 };
+
+export const register = async (username: string, password: string) => {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await db.user.create({ data: { username, passwordHash } });
+  return { id: user.id, username };
+};
