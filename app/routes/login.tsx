@@ -1,13 +1,24 @@
-import type { ActionFunction, LinksFunction } from "@remix-run/node";
+import type {
+  ActionFunction,
+  LinksFunction,
+  MetaFunction,
+} from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useActionData, Link, useSearchParams } from "@remix-run/react";
+import { useActionData, useSearchParams, Link } from "@remix-run/react";
 
 import { db } from "~/utils/db.server";
-import stylesUrl from "~/styles/login.css";
 import { createUserSession, login, register } from "~/utils/session.server";
+import stylesUrl from "~/styles/login.css";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesUrl }];
+};
+
+export const meta: MetaFunction = () => {
+  return {
+    title: "Remix Jokes | Login",
+    description: "Login to submit your own jokes to Remix Jokes!",
+  };
 };
 
 function validateUsername(username: unknown) {
@@ -73,13 +84,12 @@ export const action: ActionFunction = async ({ request }) => {
   switch (loginType) {
     case "login": {
       const user = await login({ username, password });
-
-      if (!user)
+      if (!user) {
         return badRequest({
           fields,
-          formError: "Invalid username or password",
+          formError: `Username/Password combination is incorrect`,
         });
-
+      }
       return createUserSession(user.id, redirectTo);
     }
     case "register": {
@@ -92,16 +102,14 @@ export const action: ActionFunction = async ({ request }) => {
           formError: `User with username ${username} already exists`,
         });
       }
-      // create the user
-      const user = await register(username, password);
-
+      const user = await register({ username, password });
       if (!user) {
         return badRequest({
           fields,
           formError: `Something went wrong trying to create a new user.`,
         });
       }
-      return createUserSession(user.id, "/jokes");
+      return createUserSession(user.id, redirectTo);
     }
     default: {
       return badRequest({
